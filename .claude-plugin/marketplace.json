@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sherlemious",
+  "description": "Claude Code plugins by Sherlemious",
+  "owner": {
+    "name": "Sherlemious",
+    "url": "https://github.com/Sherlemious"
+  },
+  "plugins": [
+    {
+      "name": "backlog-groomer",
+      "description": "Groom an issue backlog: find stale, duplicate, vague, unlabeled and unprioritized issues, report them, and apply only the fixes you approve. Linear supported today; tracker-agnostic by design.",
+      "source": "./plugins/backlog-groomer",
+      "category": "productivity",
+      "author": {
+        "name": "Sherlemious"
+      },
+      "homepage": "https://github.com/Sherlemious/claude-plugins/tree/main/plugins/backlog-groomer"
+    }
+  ]
+}
