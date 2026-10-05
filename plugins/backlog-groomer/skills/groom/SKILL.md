@@ -11,6 +11,8 @@ allowed-tools:
   - "mcp__plugin_linear_linear__get_*"
   - "mcp__plugin_engineering_linear__list_*"
   - "mcp__plugin_engineering_linear__get_*"
+  - "mcp__backlog-groomer__show_report"
+  - "mcp__backlog-groomer__mark_results"
 ---
 
 # Groom a backlog
@@ -92,7 +94,9 @@ For vague issues, draft the rewrite or clarifying question using `references/iss
 
 Render the report exactly as described in `references/report-format.md`: header (scope, tracker, counts, threshold, skipped buckets), then one numbered table, then the long-form drafts (rewrites, comments) keyed by item number, then the approval prompt.
 
-Stop here and wait for the user.
+If the tool `mcp__backlog-groomer__show_report` is available (this plugin's checklist pane), call it once after printing the markdown report, passing `scope`, `tracker`, `scanned`, `staleDays`, `skipped` and one entry per numbered row (`n`, `issue`, `url`, `title`, `bucket`, `action`, `reason`) with the same numbers as the table. It only draws the pane and changes nothing in the tracker. If it is unavailable or fails, the markdown report alone is enough.
+
+Stop here and wait for the user. Pressing **Apply** in the pane sends the person's own message `apply <numbers>`, which is an approval exactly like a typed one.
 
 ### 7. Apply approved items
 
@@ -100,6 +104,7 @@ Stop here and wait for the user.
 - For each item, in report order, perform the adapter calls for its action, including the mandatory comment for closes and duplicate-marks.
 - Write tools are intentionally not pre-approved, so each mutation shows a permission prompt. Do not ask the user to bypass it.
 - After the batch, print the apply summary from `references/report-format.md` with links to each changed issue.
+- If `show_report` was used, call `mcp__backlog-groomer__mark_results` with each processed item's `n` and `status` (`applied`, `failed` or `skipped`, plus a short `note` on failures) so the pane shows the outcome.
 
 ## Additional resources
 

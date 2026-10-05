@@ -1,6 +1,6 @@
 {
   "name": "backlog-groomer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Groom an issue backlog: find stale, duplicate, vague, unlabeled and unprioritized issues, report them, and apply only the fixes you approve.",
   "author": {
     "name": "Sherlemious",
@@ -9,5 +9,14 @@
   "homepage": "https://github.com/Sherlemious/claude-plugins/tree/main/plugins/backlog-groomer",
   "repository": "https://github.com/Sherlemious/claude-plugins",
   "license": "MIT",
-  "keywords": ["backlog", "grooming", "triage", "linear", "issues", "duplicates", "project-management"]
+  "keywords": [
+    "backlog",
+    "grooming",
+    "triage",
+    "linear",
+    "issues",
+    "duplicates",
+    "project-management"
+  ],
+  "types": "./types/index.d.ts"
 }

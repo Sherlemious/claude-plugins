@@ -37,6 +37,28 @@ Or call the skill directly:
 /backlog-groomer:groom mine stale=30       # your issues, 30-day stale threshold
 ```
 
+### Checklist pane (TUI)
+
+In an interactive Claude Code session, the report also opens as a **checklist pane**. In fullscreen it docks beside the transcript; otherwise it sits above the prompt.
+
+```
+TheLearningMate · Linear · 132 scanned · stale ≥ 60d · 0/12 applied
+All (12)  Duplicate (3)  Stale (5)  Vague (2)  Labels (2)
+
+[x]  1 TLM-42 Duplicate Login fails on Safari
+        → Mark duplicate of TLM-17 + comment — same Safari failure
+[ ]  2 TLM-88 Stale     Dark mode
+        → Cancel + comment — untouched 143 days
+[ y: Apply 1 selected ]  [ a: Select shown ]  [ c: Clear ]  [ q: Close ]
+```
+
+- `ctrl+x tab` focuses the pane. Tab or the arrow keys move between rows, Enter ticks a row, and `y` applies.
+- Clicking a bucket filters the rows.
+- **Apply** sends `apply 1, 4-6` as your message, exactly as if you had typed it. Rows then update to ✓ / ✗ as the writes finish.
+- Run `/groom-report` to reopen the pane.
+
+Headless runs and older Claude Code versions skip the pane and use only the markdown report.
+
 ### What it proposes
 
 | Bucket | Proposed action |
