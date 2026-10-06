@@ -42,26 +42,30 @@ Or call the skill directly:
 In an interactive Claude Code session, the report opens as a **checklist pane**, and the chat shows only a short summary. In fullscreen the pane docks beside the transcript; otherwise it sits above the prompt.
 
 ```
-TheLearningMate · Linear · 132 scanned · stale ≥ 60d · 0/12 applied
+▤ TheLearningMate · Linear · 132 scanned · ◷ 60d · ✓ 0/12
 [ y: Apply 1 selected ]  [ a: Select shown ]  [ c: Clear ]  [ q: Close ]
-All 12  Duplicate 3  Stale 5  Vague 2  Labels 2
+≡ All 12  ⧉ Duplicate 3  ◷ Stale 5  ? Vague 2  ◆ Labels 2
 
-[x]  1 ▸TLM-42 ✎ Duplicate: Mark duplicate of TLM-17 + comment
-[ ]  2  TLM-88 ✎ Stale: Cancel + comment
-[ ]  3  TLM-95   Labels: +Feature
-╭──────────────────────────────────────────────────────────────╮
-│ #1 TLM-42 Login fails on Safari                              │
-│ Will do: Mark duplicate of TLM-17 + comment                  │
-│ Why: Same Safari failure; TLM-17 has repro steps             │
-│                                                              │
-│ Comment to post:                                             │
-│ Marking as duplicate of TLM-17, which covers the same …      │
-╰──────────────────────────────────────────────────────────────╯
+[x]  1 ▂▄▆ ▾ TLM-42 ✎ ⧉ Mark duplicate of TLM-17 + comment
+    ╭──────────────────────────────────────────────────────────╮
+    │ Login fails on Safari                                    │
+    │ Priority ▂▄▆ High                                        │
+    │ Will do Mark duplicate of TLM-17 + comment               │
+    │ Why Same Safari failure; TLM-17 has repro steps          │
+    │                                                          │
+    │ ✎ Comment to post                                        │
+    │ Marking as duplicate of TLM-17, which covers the same …  │
+    │ Open in Linear ↗                                         │
+    ╰──────────────────────────────────────────────────────────╯
+[ ]  2 ··· ▸ TLM-88 ✎ ◷ Cancel + comment
+[ ]  3 ▂   ▸ TLM-95   ◆ +Feature
 ```
 
-- `ctrl+x tab` focuses the pane. Tab or the arrow keys move between rows, and the **preview follows the focused row**. Enter ticks a row, and `y` applies.
-- `✎` marks rows that will post text. The preview shows that text exactly as it will be posted.
-- Clicking a bucket filters the rows.
+- **Click a ticket ID** (or press Enter on it) to expand it in place. It shows the title, current priority, what will happen, why, the exact comment or new description to be posted, and a link to the issue. Only one ticket is open at a time, and clicking the ID again collapses it.
+- **Ticking a row also expands it**, so you see what you're approving.
+- Drafts longer than 10 lines are cut off until you press **Show all**.
+- Icons: priority shows as `!!!` urgent, `▂▄▆` high, `▂▄` medium, `▂` low or `···` none. `✎` marks rows that post text. Buckets are `⧉` duplicate, `⇄` related, `◷` stale, `?` vague, `◆` labels, `▲` priority, `◔` estimate and `○` orphaned.
+- `ctrl+x tab` focuses the pane, Tab or the arrow keys move, and `y` applies. Clicking a bucket filters the rows.
 - **Apply** sends `apply 1, 4-6` as your message, exactly as if you had typed it. Rows then update to ✓ / ✗ as the writes finish.
 - Run `/groom-report` to reopen the pane.
 

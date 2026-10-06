@@ -6,6 +6,8 @@ export type GroomItem = {
   bucket: string
   action: string
   reason: string
+  /** Current priority on the tracker's 0-4 scale (0 none, 1 urgent ... 4 low). */
+  priority?: number
   /** Exact text the apply step will post: the comment, or the new description. */
   draft?: string
   /** What `draft` is: "Comment", "New description", ... */
@@ -32,7 +34,8 @@ declare module 'claude-code' {
       selected: number[]
       results: Record<string, GroomResult>
       bucket: string
-      preview: number | null
+      expanded: number | null
+      showAll: boolean
     }
   }
 }
