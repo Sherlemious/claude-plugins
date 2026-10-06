@@ -1,6 +1,7 @@
 {
   "name": "backlog-groomer",
-  "version": "0.5.0",
+  "displayName": "Backlog Groomer",
+  "version": "0.5.1",
   "description": "Groom an issue backlog: find stale, duplicate, vague, unlabeled and unprioritized issues, report them, and apply only the fixes you approve.",
   "author": {
     "name": "Sherlemious",

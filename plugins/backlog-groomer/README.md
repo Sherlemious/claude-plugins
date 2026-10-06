@@ -91,6 +91,17 @@ When no pane can be shown (headless runs, older Claude Code versions), the full 
 - **A batch is capped at 25 issues.**
 - **Writes still go through permission prompts.** The skill pre-approves only read-only Linear tools.
 
+## What this plugin reads, runs and sends
+
+- **No servers, network calls or credentials of its own.** The plugin bundles no MCP server, makes no HTTP requests, runs no package installs or shell scripts, and asks for no API keys. Its only external access is through the Linear connection you already have (the claude.ai Linear connector or `linear@claude-plugins-official`), with your account's permissions.
+- **What it reads from Linear:** your teams, workflow statuses, labels, projects and cycles, the current user (for the `mine` scope), and the open issues in the scope you choose. That includes their titles, descriptions, status, labels, priority, estimate, assignee, creator, dates and URLs. Comments are read only for candidate issues. The read-only `list_*` and `get_*` Linear tools are pre-approved while the skill runs, so these reads don't prompt.
+- **What it writes to Linear**, and only for the items you approve by number: status changes to Canceled, duplicate and related links, label additions and removals, priority, estimate and project, description rewrites, and comments. Every write goes through Claude Code's normal permission prompt. Nothing is ever deleted.
+- **What it stores:** only the current report, which items you've ticked and the apply results. These are held in Claude Code's session state for the checklist pane, are never written to disk, and are gone when the session ends.
+- **The checklist pane** (`hooks/register.tsx`, readable TypeScript loaded by Claude Code) adds two local tools, `show_report` and `mark_results`, which only update the pane, and the `/groom-report` command. Pressing **Apply** in the pane submits the message `apply <numbers>` on your behalf, exactly the text you would otherwise type. The pane does nothing else.
+- **No telemetry.** Issue data goes nowhere except the Claude conversation you run the skill in and the Linear workspace it came from.
+
+The skill and agent are plain Markdown. The pane is a Claude Code feature; on surfaces without panes, the skill prints the same report in chat.
+
 ## Customize
 
 Edit `skills/groom/references/heuristics.md` to change thresholds and rules, and `issue-quality-rubric.md` to change what a "good issue" looks like.
