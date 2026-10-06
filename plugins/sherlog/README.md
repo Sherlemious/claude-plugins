@@ -97,10 +97,28 @@ When no pane can be shown (headless runs, older Claude Code versions), the full 
 - **What it reads from Linear:** your teams, workflow statuses, labels, projects and cycles, the current user (for the `mine` scope), and the open issues in the scope you choose. That includes their titles, descriptions, status, labels, priority, estimate, assignee, creator, dates and URLs. Comments are read only for candidate issues. The read-only `list_*` and `get_*` Linear tools are pre-approved while the skill runs, so these reads don't prompt.
 - **What it writes to Linear**, and only for the items you approve by number: status changes to Canceled, duplicate and related links, label additions and removals, priority, estimate and project, description rewrites, and comments. Every write goes through Claude Code's normal permission prompt. Nothing is ever deleted.
 - **What it stores:** only the current report, which items you've ticked and the apply results. These are held in Claude Code's session state for the checklist pane, are never written to disk, and are gone when the session ends.
-- **The checklist pane** (`hooks/register.tsx`, readable TypeScript loaded by Claude Code) adds two local tools, `show_report` and `mark_results`, which only update the pane, and the `/groom-report` command. Pressing **Apply** in the pane submits the message `apply <numbers>` on your behalf, exactly the text you would otherwise type. The pane does nothing else.
+- **The checklist pane** is the hooks module `hooks/register.tsx`, readable TypeScript that Claude Code loads. [What the hooks do](#what-the-hooks-do) lists each hook.
 - **No telemetry.** Issue data goes nowhere except the Claude conversation you run the skill in and the Linear workspace it came from.
 
 The skill and agent are plain Markdown. The pane is a Claude Code feature; on surfaces without panes, the skill prints the same report in chat.
+
+### What the hooks do
+
+`hooks/hooks.json` loads one module, `hooks/register.tsx`, which registers these hooks. None of them makes network requests, reads or writes files, or runs processes.
+
+| Hook | What it does |
+|---|---|
+| `session.start` | Registers the two pane tools below and the `/groom-report` command, then continues the session normally. |
+| `tool.call` for `mcp__sherlog__show_report` | Serves this plugin's own tool. It stores the report the skill passes in, resets ticks and results, and opens the pane. It answers with whether the pane opened, so the skill knows to keep the chat short or print the full report. |
+| `tool.call` for `mcp__sherlog__mark_results` | Serves this plugin's own tool. It records each item as applied, failed or skipped so the pane shows ✓ / ✗ / –. |
+| `command.run` for `/groom-report` | Shows the pane if it's hidden, or hides it if it's shown. |
+| `ui.close` for the `groom-report` pane | Notes that the pane was closed, by its close mark, Esc or **Hide**, then lets the close go through unchanged. |
+| `ui.render` for the `groom-report` pane | Draws the checklist pane: header, buttons, bucket filters, rows and the expanded ticket. |
+| `ui.render` above the prompt | When a report is active and the pane is closed, draws the one-line band with **Show** and **Dismiss**. Otherwise it leaves the area above the prompt untouched. |
+
+**Tools.** The module only answers calls to the two tools it registers itself, `mcp__sherlog__show_report` and `mcp__sherlog__mark_results`. It doesn't intercept, replace or change any other tool, and Linear reads and writes go straight to your Linear connection.
+
+**Prompts it submits.** The module submits exactly one kind of prompt: `apply <item numbers>`, for example `apply 1-3, 7`. It does so only when you press **Apply** with at least one row ticked, and at most 25 items at a time. The prompt is submitted as your own message, and it is the same text you would type to approve those items. The module never submits anything else, adds no hidden context, and doesn't change the system prompt.
 
 ## Customize
 
