@@ -6,6 +6,10 @@ export type GroomItem = {
   bucket: string
   action: string
   reason: string
+  /** Exact text the apply step will post: the comment, or the new description. */
+  draft?: string
+  /** What `draft` is: "Comment", "New description", ... */
+  draftKind?: string
 }
 
 export type GroomReport = {
@@ -28,6 +32,7 @@ declare module 'claude-code' {
       selected: number[]
       results: Record<string, GroomResult>
       bucket: string
+      preview: number | null
     }
   }
 }

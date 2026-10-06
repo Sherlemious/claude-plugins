@@ -3,7 +3,6 @@ import type { EngineInterface, Register } from 'claude-code'
 
 import type { GroomItem, GroomReport, GroomResult, GroomResultStatus } from '../types'
 
-const PLUGIN = 'backlog-groomer'
 const PANE = 'groom-report'
 const MAX_BATCH = 25
 
@@ -11,6 +10,7 @@ const report = atom({ plugin: 'backlog-groomer', key: 'report' } as const, null)
 const selected = atom({ plugin: 'backlog-groomer', key: 'selected' } as const, [])
 const results = atom({ plugin: 'backlog-groomer', key: 'results' } as const, {})
 const bucket = atom({ plugin: 'backlog-groomer', key: 'bucket' } as const, 'all')
+const preview = atom({ plugin: 'backlog-groomer', key: 'preview' } as const, null)
 
 const STATUSES: readonly GroomResultStatus[] = ['pending', 'applied', 'failed', 'skipped']
 
@@ -27,13 +27,22 @@ const SHOW_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          n: { type: 'number', description: 'Item number, same as the markdown report' },
+          n: { type: 'number', description: 'Item number; "apply" messages use it' },
           issue: { type: 'string', description: 'Human identifier, e.g. TLM-42' },
           url: { type: 'string' },
           title: { type: 'string' },
-          bucket: { type: 'string', description: 'Duplicate, Related, Stale, Vague, Labels, Priority, Estimate, Orphaned' },
+          bucket: {
+            type: 'string',
+            description: 'Duplicate, Related, Stale, Vague, Labels, Priority, Estimate, Orphaned',
+          },
           action: { type: 'string', description: 'Short literal action, e.g. "Cancel + comment"' },
-          reason: { type: 'string' },
+          reason: { type: 'string', description: 'One line of concrete evidence' },
+          draft: {
+            type: 'string',
+            description:
+              'The exact markdown the apply step will post for this item (the comment, or the new description), including standard close/duplicate comments. Omit only when nothing is posted.',
+          },
+          draftKind: { type: 'string', description: '"Comment" or "New description"' },
         },
         required: ['n', 'issue', 'title', 'bucket', 'action', 'reason'],
       },
@@ -65,6 +74,10 @@ function asText(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback
 }
 
+function optionalText(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() !== '' ? value : undefined
+}
+
 function parseItems(value: unknown): GroomItem[] {
   if (!Array.isArray(value)) return []
   const items: GroomItem[] = []
@@ -75,11 +88,13 @@ function parseItems(value: unknown): GroomItem[] {
     items.push({
       n: one.n,
       issue: asText(one.issue, '?'),
-      url: typeof one.url === 'string' ? one.url : undefined,
+      url: optionalText(one.url),
       title: asText(one.title),
       bucket: asText(one.bucket, 'Other'),
       action: asText(one.action),
       reason: asText(one.reason),
+      draft: optionalText(one.draft),
+      draftKind: optionalText(one.draftKind),
     })
   }
   return items.sort((a, b) => a.n - b.n)
@@ -116,6 +131,11 @@ function mark(result: GroomResult | undefined, isSelected: boolean): string {
   }
 }
 
+function rowOf(key: string | undefined): number | undefined {
+  const match = key === undefined ? null : /^(?:toggle|view):(\d+)$/.exec(key)
+  return match === null ? undefined : Number(match[1])
+}
+
 async function openPane($: EngineInterface, focus: boolean) {
   const shown = await read($, report)
   const title = shown === null ? 'Backlog grooming' : `Grooming: ${shown.scope}`
@@ -148,13 +168,13 @@ export const register: Register = on => {
     await $.tool.register({
       name: 'show_report',
       description:
-        'Shows a backlog grooming report as an interactive checklist pane. Call it once per report, after printing the markdown report, with the same numbered items. The person ticks items and presses Apply, which sends "apply <numbers>" as their message. Read-only: it changes nothing in the tracker.',
+        'Shows a backlog grooming report as an interactive checklist pane with a preview of each item\'s exact comment or rewrite. Call it before writing the report in chat. The result says whether the pane is open: if so, keep the chat to a short summary. The person ticks items and presses Apply, which sends "apply <numbers>" as their message. Changes nothing in the tracker.',
       inputSchema: SHOW_SCHEMA,
     })
     await $.tool.register({
       name: 'mark_results',
       description:
-        'Marks report items as applied, failed or skipped in the grooming pane, after the corresponding tracker writes. Read-only: it changes nothing in the tracker.',
+        'Marks report items as applied, failed or skipped in the grooming pane, after the corresponding tracker writes. Changes nothing in the tracker.',
       inputSchema: MARK_SCHEMA,
     })
     await $.command.register({
@@ -182,24 +202,25 @@ export const register: Register = on => {
       tracker: asText(e.tracker, 'tracker'),
       scanned: typeof e.scanned === 'number' ? e.scanned : items.length,
       staleDays: typeof e.staleDays === 'number' ? e.staleDays : undefined,
-      skipped: typeof e.skipped === 'string' && e.skipped !== '' ? e.skipped : undefined,
+      skipped: optionalText(e.skipped),
       items,
     }
     await update($, report, () => next)
     await update($, selected, () => [])
     await update($, results, () => ({}))
     await update($, bucket, () => 'all')
-    let where = 'The checklist pane could not be opened on this surface; the markdown report stands.'
+    await update($, preview, () => items[0]?.n ?? null)
+
+    let isOpen = false
     try {
-      const opened = await openPane($, true)
-      where = opened.isPlaced
-        ? 'The checklist pane is open.'
-        : 'The pane is waiting for more terminal width; the person can run /groom-report to open it.'
+      isOpen = (await openPane($, true)).isPlaced
     } catch {
-      // Headless runs and surfaces without panes: the markdown report is enough.
+      // Headless runs and surfaces without panes: the chat report stands alone.
     }
     return {
-      result: `${where} ${items.length} items shown. Wait for the person: they either type "apply …" or press Apply in the pane, which sends the same message. After applying, call mark_results.`,
+      result: isOpen
+        ? `PANE OPEN with ${items.length} items and their drafts. In chat, print only the report header, the per-bucket counts and one line: "Review and tick items in the pane (ctrl+x tab), or type apply <numbers>." Do not print the table or drafts unless the person asks.`
+        : `PANE NOT SHOWN. Print the full markdown report (table and drafts) in chat. Tell the person they can run /groom-report to open the checklist.`,
     }
   })
 
@@ -221,8 +242,15 @@ export const register: Register = on => {
     return { result: `Marked ${count} item(s) in the pane.` }
   })
 
+  // The preview follows the focus ring as the person tabs through the rows.
+  on('ui.focus', { requestId: 'groom-report' }, async ($, e, next) => {
+    const n = rowOf(e.element)
+    if (n !== undefined) await update($, preview, () => n)
+    return next(e)
+  })
+
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const { Box, Text, Button, Markdown } = $.ui.resolve(e)
     const shown = await read($, report)
     if (shown === null) {
       return <Text dimColor>No grooming report yet. Run /backlog-groomer:groom.</Text>
@@ -230,10 +258,11 @@ export const register: Register = on => {
     const picked = await read($, selected)
     const done = await read($, results)
     const filter = await read($, bucket)
+    const previewed = await read($, preview)
     const visible = filter === 'all' ? shown.items : shown.items.filter(item => item.bucket === filter)
-    const open = shown.items.filter(item => done[String(item.n)] === undefined)
     const pickable = picked.filter(n => done[String(n)] === undefined)
     const applied = Object.values(done).filter(result => result.status === 'applied').length
+    const focusItem = shown.items.find(item => item.n === previewed)
 
     const toggle = (n: number) =>
       update($, selected, current =>
@@ -244,6 +273,7 @@ export const register: Register = on => {
         const ids = visible.filter(item => done[String(item.n)] === undefined).map(item => item.n)
         return [...new Set([...current, ...ids])]
       })
+    const show = (n: number) => update($, preview, () => n)
 
     return (
       <Box flexDirection="column">
@@ -256,50 +286,13 @@ export const register: Register = on => {
             {shown.items.length} applied
           </Text>
         </Text>
-        {shown.skipped !== undefined && <Text dimColor>Skipped: {shown.skipped}</Text>}
-        <Box flexDirection="row" flexWrap="wrap" columnGap={1} marginTop={1}>
-          {['all', ...bucketsOf(shown.items)].map(name => (
-            <Button
-              key={`bucket:${name}`}
-              plain
-              dimColor={filter !== name}
-              label={`${name === 'all' ? 'All' : name} (${
-                name === 'all' ? shown.items.length : shown.items.filter(item => item.bucket === name).length
-              })`}
-              onPress={() => update($, bucket, () => name)}
-            />
-          ))}
-        </Box>
-        <Box flexDirection="column" marginTop={1}>
-          {visible.map(item => {
-            const result = done[String(item.n)]
-            const isPicked = picked.includes(item.n)
-            return (
-              <Box key={`row:${item.n}`} flexDirection="column">
-                <Box flexDirection="row" columnGap={1}>
-                  <Button
-                    key={`toggle:${item.n}`}
-                    plain
-                    label={mark(result, isPicked)}
-                    onPress={() => (result === undefined ? toggle(item.n) : undefined)}
-                  />
-                  <Text dimColor>{String(item.n).padStart(2)}</Text>
-                  <Text color="cyan">{item.issue}</Text>
-                  <Text dimColor>{item.bucket}</Text>
-                  <Text wrap="truncate-end">{item.title}</Text>
-                </Box>
-                <Box paddingLeft={8}>
-                  <Text dimColor wrap="truncate-end">
-                    → {item.action}
-                    {item.reason === '' ? '' : ` — ${item.reason}`}
-                    {result?.note === undefined ? '' : ` (${result.note})`}
-                  </Text>
-                </Box>
-              </Box>
-            )
-          })}
-        </Box>
-        <Box flexDirection="row" columnGap={2} marginTop={1}>
+        {shown.skipped !== undefined && (
+          <Text dimColor wrap="truncate-end">
+            Skipped: {shown.skipped}
+          </Text>
+        )}
+
+        <Box flexDirection="row" flexWrap="wrap" columnGap={2} marginTop={1}>
           <Button
             key="apply"
             hotkey="y"
@@ -311,8 +304,101 @@ export const register: Register = on => {
           <Button key="clear" hotkey="c" label="Clear" onPress={() => update($, selected, () => [])} />
           <Button key="close" hotkey="q" role="dismiss" label="Close" onPress={() => $.ui.close({ id: PANE })} />
         </Box>
+
+        <Box flexDirection="row" flexWrap="wrap" columnGap={1} marginTop={1}>
+          {['all', ...bucketsOf(shown.items)].map(name => (
+            <Button
+              key={`bucket:${name}`}
+              plain
+              dimColor={filter !== name}
+              label={`${name === 'all' ? 'All' : name} ${
+                name === 'all' ? shown.items.length : shown.items.filter(item => item.bucket === name).length
+              }`}
+              onPress={() => update($, bucket, () => name)}
+            />
+          ))}
+        </Box>
+
+        <Box flexDirection="column" marginTop={1}>
+          {visible.map(item => {
+            const result = done[String(item.n)]
+            const isPicked = picked.includes(item.n)
+            const isPreviewed = item.n === previewed
+            return (
+              <Box key={`row:${item.n}`} flexDirection="row" columnGap={1}>
+                <Button
+                  key={`toggle:${item.n}`}
+                  plain
+                  label={mark(result, isPicked)}
+                  onPress={() => {
+                    void show(item.n)
+                    return result === undefined ? toggle(item.n) : undefined
+                  }}
+                />
+                <Text dimColor>{String(item.n).padStart(2)}</Text>
+                <Button
+                  key={`view:${item.n}`}
+                  plain
+                  dimColor={!isPreviewed}
+                  label={`${isPreviewed ? '▸' : ' '}${item.issue}`}
+                  onPress={() => show(item.n)}
+                />
+                <Text color={item.draft === undefined ? undefined : 'yellow'}>{item.draft === undefined ? ' ' : '✎'}</Text>
+                <Text wrap="truncate-end">
+                  <Text dimColor>{item.bucket}: </Text>
+                  {item.action}
+                </Text>
+              </Box>
+            )
+          })}
+        </Box>
+
+        {focusItem !== undefined && (
+          <Box
+            key="preview"
+            flexDirection="column"
+            marginTop={1}
+            borderStyle="round"
+            borderDimColor
+            paddingX={1}
+          >
+            <Text wrap="truncate-end">
+              <Text bold>
+                #{focusItem.n} {focusItem.issue}
+              </Text>{' '}
+              {focusItem.title}
+            </Text>
+            {focusItem.url !== undefined && (
+              <Text dimColor wrap="truncate-end">
+                {focusItem.url}
+              </Text>
+            )}
+            <Text>
+              <Text dimColor>Will do: </Text>
+              {focusItem.action}
+            </Text>
+            <Text>
+              <Text dimColor>Why: </Text>
+              {focusItem.reason}
+            </Text>
+            {done[String(focusItem.n)]?.note !== undefined && (
+              <Text color="red">Result: {done[String(focusItem.n)]?.note}</Text>
+            )}
+            <Box marginTop={1} flexDirection="column">
+              {focusItem.draft === undefined ? (
+                <Text dimColor>Nothing will be posted on this issue.</Text>
+              ) : (
+                <Box flexDirection="column">
+                  <Text dimColor>{focusItem.draftKind ?? 'Comment'} to post:</Text>
+                  <Markdown key="draft" text={focusItem.draft} />
+                </Box>
+              )}
+            </Box>
+          </Box>
+        )}
+
         <Text dimColor>
-          {open.length} open · ctrl+x tab to focus · Tab/arrows move · Enter toggles · nothing changes until Apply
+          ctrl+x tab focus · Tab/arrows move (preview follows) · Enter ticks · ✎ posts text · nothing changes until Apply
         </Text>
       </Box>
     )

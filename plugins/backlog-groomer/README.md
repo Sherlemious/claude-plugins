@@ -39,25 +39,33 @@ Or call the skill directly:
 
 ### Checklist pane (TUI)
 
-In an interactive Claude Code session, the report also opens as a **checklist pane**. In fullscreen it docks beside the transcript; otherwise it sits above the prompt.
+In an interactive Claude Code session, the report opens as a **checklist pane**, and the chat shows only a short summary. In fullscreen the pane docks beside the transcript; otherwise it sits above the prompt.
 
 ```
 TheLearningMate · Linear · 132 scanned · stale ≥ 60d · 0/12 applied
-All (12)  Duplicate (3)  Stale (5)  Vague (2)  Labels (2)
-
-[x]  1 TLM-42 Duplicate Login fails on Safari
-        → Mark duplicate of TLM-17 + comment — same Safari failure
-[ ]  2 TLM-88 Stale     Dark mode
-        → Cancel + comment — untouched 143 days
 [ y: Apply 1 selected ]  [ a: Select shown ]  [ c: Clear ]  [ q: Close ]
+All 12  Duplicate 3  Stale 5  Vague 2  Labels 2
+
+[x]  1 ▸TLM-42 ✎ Duplicate: Mark duplicate of TLM-17 + comment
+[ ]  2  TLM-88 ✎ Stale: Cancel + comment
+[ ]  3  TLM-95   Labels: +Feature
+╭──────────────────────────────────────────────────────────────╮
+│ #1 TLM-42 Login fails on Safari                              │
+│ Will do: Mark duplicate of TLM-17 + comment                  │
+│ Why: Same Safari failure; TLM-17 has repro steps             │
+│                                                              │
+│ Comment to post:                                             │
+│ Marking as duplicate of TLM-17, which covers the same …      │
+╰──────────────────────────────────────────────────────────────╯
 ```
 
-- `ctrl+x tab` focuses the pane. Tab or the arrow keys move between rows, Enter ticks a row, and `y` applies.
+- `ctrl+x tab` focuses the pane. Tab or the arrow keys move between rows, and the **preview follows the focused row**. Enter ticks a row, and `y` applies.
+- `✎` marks rows that will post text. The preview shows that text exactly as it will be posted.
 - Clicking a bucket filters the rows.
 - **Apply** sends `apply 1, 4-6` as your message, exactly as if you had typed it. Rows then update to ✓ / ✗ as the writes finish.
 - Run `/groom-report` to reopen the pane.
 
-Headless runs and older Claude Code versions skip the pane and use only the markdown report.
+When no pane can be shown (headless runs, older Claude Code versions), the full markdown report is printed in chat instead.
 
 ### What it proposes
 

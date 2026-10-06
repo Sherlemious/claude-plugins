@@ -92,16 +92,19 @@ For vague issues, draft the rewrite or clarifying question using `references/iss
 
 ### 6. Report
 
-Render the report exactly as described in `references/report-format.md`: header (scope, tracker, counts, threshold, skipped buckets), then one numbered table, then the long-form drafts (rewrites, comments) keyed by item number, then the approval prompt.
+Write the full text of every comment and description rewrite first, including the standard close and duplicate comments from `heuristics.md`, filled in for that issue. These drafts are exactly what step 7 will post.
 
-If the tool `mcp__backlog-groomer__show_report` is available (this plugin's checklist pane), call it once after printing the markdown report, passing `scope`, `tracker`, `scanned`, `staleDays`, `skipped` and one entry per numbered row (`n`, `issue`, `url`, `title`, `bucket`, `action`, `reason`) with the same numbers as the table. It only draws the pane and changes nothing in the tracker. If it is unavailable or fails, the markdown report alone is enough.
+**Pane first.** If the tool `mcp__backlog-groomer__show_report` is available (this plugin's checklist pane), call it before writing anything in chat. Pass `scope`, `tracker`, `scanned`, `staleDays` and `skipped`, plus one entry per numbered item: `n`, `issue`, `url`, `title`, `bucket`, `action` and `reason`, and also `draft` (the exact markdown to post) and `draftKind` (`Comment` or `New description`) for every item that posts text. The tool draws the pane and changes nothing in the tracker. Then follow its result:
+
+- **`PANE OPEN`**: keep the chat short. Print the report header, per-bucket counts and the line "Review and tick items in the pane (ctrl+x tab), or type `apply <numbers>`." Do not repeat the table or the drafts unless the person asks for them.
+- **`PANE NOT SHOWN`**, or the tool is unavailable or fails: render the full report as described in `references/report-format.md`. That means the header, one numbered table, the long-form drafts keyed by item number, then the approval prompt.
 
 Stop here and wait for the user. Pressing **Apply** in the pane sends the person's own message `apply <numbers>`, which is an approval exactly like a typed one.
 
 ### 7. Apply approved items
 
 - Parse the approval into a set of item numbers. Confirm the parsed set back in one line if it involved ranges, bucket names or exclusions.
-- For each item, in report order, perform the adapter calls for its action, including the mandatory comment for closes and duplicate-marks.
+- For each item, in report order, perform the adapter calls for its action, including the mandatory comment for closes and duplicate-marks. Post each item's draft **verbatim**, because the person approved that exact text. If it needs any change, show the new text and ask before posting.
 - Write tools are intentionally not pre-approved, so each mutation shows a permission prompt. Do not ask the user to bypass it.
 - After the batch, print the apply summary from `references/report-format.md` with links to each changed issue.
 - If `show_report` was used, call `mcp__backlog-groomer__mark_results` with each processed item's `n` and `status` (`applied`, `failed` or `skipped`, plus a short `note` on failures) so the pane shows the outcome.

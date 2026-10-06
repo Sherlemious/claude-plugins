@@ -23,8 +23,8 @@ const REPORT = {
   scanned: 42,
   staleDays: 60,
   items: [
-    { n: 1, issue: 'TLM-42', title: 'Login fails on Safari', bucket: 'Duplicate', action: 'Mark duplicate of TLM-17 + comment', reason: 'Same Safari failure' },
-    { n: 2, issue: 'TLM-88', title: 'Dark mode', bucket: 'Stale', action: 'Cancel + comment', reason: 'Untouched 143 days' },
+    { n: 1, issue: 'TLM-42', title: 'Login fails on Safari', bucket: 'Duplicate', action: 'Mark duplicate of TLM-17 + comment', reason: 'Same Safari failure', draft: 'Marking as duplicate of TLM-17.', draftKind: 'Comment' },
+    { n: 2, issue: 'TLM-88', title: 'Dark mode', bucket: 'Stale', action: 'Cancel + comment', reason: 'Untouched 143 days', draft: 'Closing as stale: no activity for 143 days.' },
     { n: 3, issue: 'TLM-95', title: 'Add CSV import', bucket: 'Labels', action: '+Feature', reason: 'No category label' },
   ],
 } as const
@@ -102,4 +102,29 @@ test('a report with no items is refused', async ($, on) => {
   surfaceStubs(on)
   const shown = await $.tool.call({ ...REPORT, items: [] })
   expect(typeof shown.deny).toBe('string')
+})
+
+test('the preview shows the exact text that will be posted for the item in view', async ($, on) => {
+  surfaceStubs(on)
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const shown = await $.tool.call(REPORT)
+    expect(String(shown.result)).toContain('PANE OPEN')
+    const ui = await $.ui.mount({ ...PANE, surface })
+    expect((await ui.find({ key: 'draft' }))?.text).toContain('Marking as duplicate of TLM-17.')
+
+    await ui.press({ key: 'view:2' })
+    expect((await ui.find({ key: 'draft' }))?.text).toContain('Closing as stale')
+    expect((await ui.find({ key: 'preview' }))?.text).toContain('Untouched 143 days')
+
+    await ui.press({ key: 'toggle:3' })
+    expect(await ui.find({ key: 'draft' })).toBeUndefined()
+    expect((await ui.find({ key: 'preview' }))?.text).toContain('Nothing will be posted')
+    await ui.unmount()
+  }
+})
+
+test('without a placed pane the model is told to print the full report', async ($, on) => {
+  on('ui.open', async () => ({ value: { isPlaced: false, reason: 'narrow' } as never }))
+  const shown = await $.tool.call(REPORT)
+  expect(String(shown.result)).toContain('PANE NOT SHOWN')
 })
