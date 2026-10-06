@@ -1,6 +1,6 @@
-# backlog-groomer
+# Sherlog
 
-A Claude Code plugin that grooms your issue backlog. It finds **stale**, **duplicate**, **vague**, **unlabeled/mislabeled**, **unprioritized** and **orphaned** issues, shows a numbered report of proposed fixes, and applies only the items you approve.
+Sherlog investigates your issue backlog like a detective. It finds **stale**, **duplicate**, **vague**, **unlabeled/mislabeled**, **unprioritized** and **orphaned** issues, shows a numbered report of proposed fixes, and applies only the items you approve.
 
 Linear is supported today. The workflow is tracker-agnostic: each tracker is a single adapter file under `skills/groom/references/trackers/`.
 
@@ -17,7 +17,7 @@ This plugin doesn't bundle its own Linear server, so you don't end up with a dup
 
 ```
 /plugin marketplace add Sherlemious/claude-plugins
-/plugin install backlog-groomer@sherlemious
+/plugin install sherlog@sherlemious
 ```
 
 ## Use
@@ -31,10 +31,10 @@ Ask in plain language:
 Or call the skill directly:
 
 ```
-/backlog-groomer:groom                     # the only team, or asks which team
-/backlog-groomer:groom TheLearningMate     # a team
-/backlog-groomer:groom "Q4 Launch"         # a project
-/backlog-groomer:groom mine stale=30       # your issues, 30-day stale threshold
+/sherlog:groom                     # the only team, or asks which team
+/sherlog:groom TheLearningMate     # a team
+/sherlog:groom "Q4 Launch"         # a project
+/sherlog:groom mine stale=30       # your issues, 30-day stale threshold
 ```
 
 ### Checklist pane (TUI)

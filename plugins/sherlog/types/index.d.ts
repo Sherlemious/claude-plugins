@@ -29,7 +29,7 @@ export type GroomResult = { status: GroomResultStatus; note?: string }
 
 declare module 'claude-code' {
   interface PluginState {
-    'backlog-groomer': {
+    'sherlog': {
       report: GroomReport | null
       selected: number[]
       results: Record<string, GroomResult>

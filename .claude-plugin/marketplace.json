@@ -8,14 +8,14 @@
   },
   "plugins": [
     {
-      "name": "backlog-groomer",
+      "name": "sherlog",
       "description": "Groom an issue backlog: find stale, duplicate, vague, unlabeled and unprioritized issues, report them, and apply only the fixes you approve. Linear supported today; tracker-agnostic by design.",
-      "source": "./plugins/backlog-groomer",
+      "source": "./plugins/sherlog",
       "category": "productivity",
       "author": {
         "name": "Sherlemious"
       },
-      "homepage": "https://github.com/Sherlemious/claude-plugins/tree/main/plugins/backlog-groomer"
+      "homepage": "https://github.com/Sherlemious/claude-plugins/tree/main/plugins/sherlog"
     }
   ]
 }

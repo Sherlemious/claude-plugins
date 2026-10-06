@@ -1,13 +1,13 @@
 {
-  "name": "backlog-groomer",
-  "displayName": "Backlog Groomer",
-  "version": "0.5.1",
+  "name": "sherlog",
+  "displayName": "Sherlog",
+  "version": "0.6.0",
   "description": "Groom an issue backlog: find stale, duplicate, vague, unlabeled and unprioritized issues, report them, and apply only the fixes you approve.",
   "author": {
     "name": "Sherlemious",
     "url": "https://github.com/Sherlemious"
   },
-  "homepage": "https://github.com/Sherlemious/claude-plugins/tree/main/plugins/backlog-groomer",
+  "homepage": "https://github.com/Sherlemious/claude-plugins/tree/main/plugins/sherlog",
   "repository": "https://github.com/Sherlemious/claude-plugins",
   "license": "MIT",
   "keywords": [

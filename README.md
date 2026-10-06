@@ -12,13 +12,13 @@ A [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-market
 
 | Plugin | What it does | Install |
 |---|---|---|
-| [backlog-groomer](plugins/backlog-groomer) | Grooms an issue backlog (stale, duplicate, vague and unlabeled issues), reports proposed fixes, and applies only the ones you approve. Supports Linear. | `/plugin install backlog-groomer@sherlemious` |
+| [sherlog](plugins/sherlog) | Grooms an issue backlog (stale, duplicate, vague and unlabeled issues), reports proposed fixes, and applies only the ones you approve. Supports Linear. | `/plugin install sherlog@sherlemious` |
 
 ## Develop locally
 
 ```
-claude --plugin-dir ./plugins/backlog-groomer     # load without installing; use /reload-plugins after edits
-claude plugin validate ./plugins/backlog-groomer
+claude --plugin-dir ./plugins/sherlog     # load without installing; use /reload-plugins after edits
+claude plugin validate ./plugins/sherlog
 claude plugin validate .
 ```
 

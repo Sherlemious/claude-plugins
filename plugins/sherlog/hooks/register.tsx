@@ -6,14 +6,14 @@ import type { GroomItem, GroomReport, GroomResult, GroomResultStatus } from '../
 const PANE = 'groom-report'
 const MAX_BATCH = 25
 
-const report = atom({ plugin: 'backlog-groomer', key: 'report' } as const, null)
-const selected = atom({ plugin: 'backlog-groomer', key: 'selected' } as const, [])
-const results = atom({ plugin: 'backlog-groomer', key: 'results' } as const, {})
-const bucket = atom({ plugin: 'backlog-groomer', key: 'bucket' } as const, 'all')
-const expanded = atom({ plugin: 'backlog-groomer', key: 'expanded' } as const, null)
-const showAll = atom({ plugin: 'backlog-groomer', key: 'showAll' } as const, false)
-const isPaneOpen = atom({ plugin: 'backlog-groomer', key: 'isPaneOpen' } as const, false)
-const isBandHidden = atom({ plugin: 'backlog-groomer', key: 'isBandHidden' } as const, false)
+const report = atom({ plugin: 'sherlog', key: 'report' } as const, null)
+const selected = atom({ plugin: 'sherlog', key: 'selected' } as const, [])
+const results = atom({ plugin: 'sherlog', key: 'results' } as const, {})
+const bucket = atom({ plugin: 'sherlog', key: 'bucket' } as const, 'all')
+const expanded = atom({ plugin: 'sherlog', key: 'expanded' } as const, null)
+const showAll = atom({ plugin: 'sherlog', key: 'showAll' } as const, false)
+const isPaneOpen = atom({ plugin: 'sherlog', key: 'isPaneOpen' } as const, false)
+const isBandHidden = atom({ plugin: 'sherlog', key: 'isBandHidden' } as const, false)
 
 const DRAFT_LINES = 10
 
@@ -235,7 +235,7 @@ export const register: Register = on => {
 
   on('command.run', { command: 'groom-report' }, async $ => {
     if ((await read($, report)) === null) {
-      return { text: 'No grooming report yet. Run /backlog-groomer:groom first.' }
+      return { text: 'No grooming report yet. Run /sherlog:groom first.' }
     }
     const isUp = (await $.ui.panes()).some(pane => pane.id === PANE)
     if (isUp) {
@@ -283,7 +283,7 @@ export const register: Register = on => {
     )
   })
 
-  on('tool.call', { tool: 'mcp__backlog-groomer__show_report' }, async ($, e) => {
+  on('tool.call', { tool: 'mcp__sherlog__show_report' }, async ($, e) => {
     const items = parseItems(e.items)
     if (items.length === 0) {
       return { deny: 'show_report needs at least one item with a numeric "n".' }
@@ -317,7 +317,7 @@ export const register: Register = on => {
     }
   })
 
-  on('tool.call', { tool: 'mcp__backlog-groomer__mark_results' }, async ($, e) => {
+  on('tool.call', { tool: 'mcp__sherlog__mark_results' }, async ($, e) => {
     const list = Array.isArray(e.results) ? e.results : []
     let count = 0
     await update($, results, current => {
@@ -339,7 +339,7 @@ export const register: Register = on => {
     const { Box, Text, Button, Markdown } = $.ui.resolve(e)
     const shown = await read($, report)
     if (shown === null) {
-      return <Text dimColor>No grooming report yet. Run /backlog-groomer:groom.</Text>
+      return <Text dimColor>No grooming report yet. Run /sherlog:groom.</Text>
     }
     const picked = await read($, selected)
     const done = await read($, results)

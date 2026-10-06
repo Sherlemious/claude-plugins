@@ -3,7 +3,7 @@ import { expect, test } from 'claude-code/testing'
 import type { Engine } from 'claude-code/testing'
 
 const PANE = {
-  plugin: 'backlog-groomer',
+  plugin: 'sherlog',
   component: 'Pane',
   requestId: 'groom-report',
   props: {
@@ -18,7 +18,7 @@ const PANE = {
 } as const
 
 const REPORT = {
-  tool: 'mcp__backlog-groomer__show_report',
+  tool: 'mcp__sherlog__show_report',
   scope: 'Team TheLearningMate',
   tracker: 'Linear',
   scanned: 42,
@@ -67,7 +67,7 @@ test('ticked items are applied as one "apply" message from the person', async ($
   expect((await ui.find({ key: 'toggle:2' }))?.text).toContain('[…]')
 
   await $.tool.call({
-    tool: 'mcp__backlog-groomer__mark_results',
+    tool: 'mcp__sherlog__mark_results',
     results: [
       { n: 1, status: 'applied' },
       { n: 2, status: 'failed', note: 'rate limited' },
@@ -155,7 +155,7 @@ test('without a placed pane the model is told to print the full report', async (
 })
 
 const BAND = {
-  plugin: 'backlog-groomer',
+  plugin: 'sherlog',
   component: 'AbovePrompt',
   props: {
     hasSurvey: false,
