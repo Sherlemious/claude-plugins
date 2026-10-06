@@ -1,7 +1,7 @@
 {
   "name": "sherlog",
   "displayName": "Sherlog",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Groom an issue backlog: find stale, duplicate, vague, unlabeled and unprioritized issues, report them, and apply only the fixes you approve.",
   "author": {
     "name": "Sherlemious",
