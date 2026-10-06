@@ -116,9 +116,22 @@ The skill and agent are plain Markdown. The pane is a Claude Code feature; on su
 | `ui.render` for the `groom-report` pane | Draws the checklist pane: header, buttons, bucket filters, rows and the expanded ticket. |
 | `ui.render` above the prompt | When a report is active and the pane is closed, draws the one-line band with **Show** and **Dismiss**. Otherwise it leaves the area above the prompt untouched. |
 
-**Tools.** The module only answers calls to the two tools it registers itself, `mcp__sherlog__show_report` and `mcp__sherlog__mark_results`. It doesn't intercept, replace or change any other tool, and Linear reads and writes go straight to your Linear connection.
+#### Tools this mod stands in for
 
-**Prompts it submits.** The module submits exactly one kind of prompt: `apply <item numbers>`, for example `apply 1-3, 7`. It does so only when you press **Apply** with at least one row ticked, and at most 25 items at a time. The prompt is submitted as your own message, and it is the same text you would type to approve those items. The module never submits anything else, adds no hidden context, and doesn't change the system prompt.
+The mod's two `tool.call` hooks answer for, and stand in for, exactly two tools: the ones it registers itself, `mcp__sherlog__show_report` and `mcp__sherlog__mark_results`. No other code implements those tools, so the hooks return their own result instead of calling `next`.
+- `show_report` is called once per grooming run, after the report is built. The hook stores the report and opens the pane.
+- `mark_results` is called after the approved writes. The hook marks rows as applied, failed or skipped.
+
+No hook matches any other tool, so every other tool call, Linear included, runs exactly as it would without the plugin.
+
+#### Prompts this mod submits
+
+The mod submits exactly one kind of prompt: `apply <item numbers>`, for example `apply 1-3, 7`.
+- **When:** only when you press **Apply** (or its hotkey `y`) in the pane with at least one row ticked, and at most 25 items per prompt.
+- **What goes into it:** only the item numbers of the rows you ticked. The pane reads these from its own session state with `state.get`, and that is the only stored data that ever leaves the mod in a prompt. Issue titles, descriptions, drafts and URLs are never put into a prompt.
+- **As whom:** it is submitted as your own message, exactly the text you would type to approve those items.
+
+The mod never submits any other prompt, adds no hidden context, and doesn't change the system prompt.
 
 ## Customize
 
