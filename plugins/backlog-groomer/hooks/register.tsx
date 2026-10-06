@@ -12,6 +12,8 @@ const results = atom({ plugin: 'backlog-groomer', key: 'results' } as const, {})
 const bucket = atom({ plugin: 'backlog-groomer', key: 'bucket' } as const, 'all')
 const expanded = atom({ plugin: 'backlog-groomer', key: 'expanded' } as const, null)
 const showAll = atom({ plugin: 'backlog-groomer', key: 'showAll' } as const, false)
+const isPaneOpen = atom({ plugin: 'backlog-groomer', key: 'isPaneOpen' } as const, false)
+const isBandHidden = atom({ plugin: 'backlog-groomer', key: 'isBandHidden' } as const, false)
 
 const DRAFT_LINES = 10
 
@@ -179,7 +181,14 @@ function mark(result: GroomResult | undefined, isSelected: boolean): string {
 async function openPane($: EngineInterface, focus: boolean) {
   const shown = await read($, report)
   const title = shown === null ? 'Backlog grooming' : `Grooming: ${shown.scope}`
-  return $.ui.open(focus ? { id: PANE, title, focus: true } : { id: PANE, title })
+  const opened = await $.ui.open(focus ? { id: PANE, title, focus: true } : { id: PANE, title })
+  await update($, isPaneOpen, () => true)
+  return opened
+}
+
+async function closePane($: EngineInterface) {
+  await $.ui.close({ id: PANE })
+  await update($, isPaneOpen, () => false)
 }
 
 async function apply($: EngineInterface) {
@@ -219,7 +228,7 @@ export const register: Register = on => {
     })
     await $.command.register({
       name: 'groom-report',
-      description: 'Reopen the backlog grooming checklist pane',
+      description: 'Show or hide the backlog grooming checklist pane',
     })
     return next(e)
   })
@@ -228,8 +237,50 @@ export const register: Register = on => {
     if ((await read($, report)) === null) {
       return { text: 'No grooming report yet. Run /backlog-groomer:groom first.' }
     }
+    const isUp = (await $.ui.panes()).some(pane => pane.id === PANE)
+    if (isUp) {
+      await closePane($)
+      return { text: 'Grooming pane hidden. Run /groom-report again, or press Show above the prompt, to bring it back.' }
+    }
+    await update($, isBandHidden, () => false)
     await openPane($, true)
-    return { text: 'Grooming report pane opened.' }
+    return { text: 'Grooming pane shown.' }
+  })
+
+  // However the pane goes away (its close mark, Esc, the Hide button), remember it.
+  on('ui.close', { id: 'groom-report' }, async ($, e, next) => {
+    const closed = await next(e)
+    await update($, isPaneOpen, () => false)
+    return closed
+  })
+
+  // Pane closed while a report is live: a one-line band above the prompt brings it back.
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const shown = await read($, report)
+    const isQuiet =
+      e.props.hasSurvey ||
+      shown === null ||
+      (await read($, isPaneOpen)) ||
+      (await read($, isBandHidden))
+    if (isQuiet || shown === null) return next(e)
+
+    const { Box, Text, Button } = $.ui.resolve(e)
+    const done = await read($, results)
+    const picked = (await read($, selected)).filter(n => done[String(n)] === undefined)
+    const applied = Object.values(done).filter(result => result.status === 'applied').length
+    return (
+      <Box key="groom-band" flexDirection="row" columnGap={2}>
+        <Text wrap="truncate-end">
+          <Text bold>▤ Grooming report</Text>
+          <Text dimColor>
+            {' '}
+            · {shown.scope} · {picked.length} selected · ✓ {applied}/{shown.items.length}
+          </Text>
+        </Text>
+        <Button key="band-show" hotkey="g" variant="primary" label="Show" onPress={() => openPane($, true)} />
+        <Button key="band-dismiss" hotkey="h" dimColor label="Dismiss" onPress={() => update($, isBandHidden, () => true)} />
+      </Box>
+    )
   })
 
   on('tool.call', { tool: 'mcp__backlog-groomer__show_report' }, async ($, e) => {
@@ -251,6 +302,7 @@ export const register: Register = on => {
     await update($, bucket, () => 'all')
     await update($, expanded, () => null)
     await update($, showAll, () => false)
+    await update($, isBandHidden, () => false)
 
     let isOpen = false
     try {
@@ -405,7 +457,7 @@ export const register: Register = on => {
           />
           <Button key="select-all" hotkey="a" label="Select shown" onPress={selectVisible} />
           <Button key="clear" hotkey="c" label="Clear" onPress={() => update($, selected, () => [])} />
-          <Button key="close" hotkey="q" role="dismiss" label="Close" onPress={() => $.ui.close({ id: PANE })} />
+          <Button key="close" hotkey="q" role="dismiss" label="Hide" onPress={() => closePane($)} />
         </Box>
 
         <Box flexDirection="row" flexWrap="wrap" columnGap={2} marginTop={1}>
@@ -462,8 +514,8 @@ export const register: Register = on => {
         </Box>
 
         <Text dimColor>
-          ctrl+x tab focus · Tab/arrows move · Enter on ▸ expands · Enter on [ ] ticks · ✎ posts text · nothing
-          changes until Apply
+          ctrl+x tab focus · Tab/arrows move · Enter on ▸ expands · Enter on [ ] ticks · ✎ posts text ·
+          /groom-report shows or hides this pane · nothing changes until Apply
         </Text>
       </Box>
     )

@@ -67,7 +67,7 @@ In an interactive Claude Code session, the report opens as a **checklist pane**,
 - Icons: priority shows as `!!!` urgent, `▂▄▆` high, `▂▄` medium, `▂` low or `···` none. `✎` marks rows that post text. Buckets are `⧉` duplicate, `⇄` related, `◷` stale, `?` vague, `◆` labels, `▲` priority, `◔` estimate and `○` orphaned.
 - `ctrl+x tab` focuses the pane, Tab or the arrow keys move, and `y` applies. Clicking a bucket filters the rows.
 - **Apply** sends `apply 1, 4-6` as your message, exactly as if you had typed it. Rows then update to ✓ / ✗ as the writes finish.
-- Run `/groom-report` to reopen the pane.
+- **Show or hide the pane:** `/groom-report` toggles it, and `q` (Hide) closes it. If it gets closed while a report is still active, a one-line band above the prompt shows **▤ Grooming report · N selected · [ g: Show ] [ h: Dismiss ]**, so you can bring it back. Your ticks are kept.
 
 When no pane can be shown (headless runs, older Claude Code versions), the full markdown report is printed in chat instead.
 

@@ -36,6 +36,8 @@ declare module 'claude-code' {
       bucket: string
       expanded: number | null
       showAll: boolean
+      isPaneOpen: boolean
+      isBandHidden: boolean
     }
   }
 }

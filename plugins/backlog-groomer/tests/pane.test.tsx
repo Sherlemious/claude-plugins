@@ -1,5 +1,6 @@
 import type { On } from 'claude-code'
 import { expect, test } from 'claude-code/testing'
+import type { Engine } from 'claude-code/testing'
 
 const PANE = {
   plugin: 'backlog-groomer',
@@ -151,4 +152,66 @@ test('without a placed pane the model is told to print the full report', async (
   on('ui.open', async () => ({ value: { isPlaced: false, reason: 'narrow' } as never }))
   const shown = await $.tool.call(REPORT)
   expect(String(shown.result)).toContain('PANE NOT SHOWN')
+})
+
+const BAND = {
+  plugin: 'backlog-groomer',
+  component: 'AbovePrompt',
+  props: {
+    hasSurvey: false,
+    isWorking: false,
+    maxRows: 6,
+    bodyColumns: 120,
+    scroll: { offset: 0, bodyRows: 6 },
+    view: {},
+  },
+  viewport: { columns: 120, rows: 40 },
+} as const
+
+async function hidePane($: Engine) {
+  const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await pane.press({ key: 'close' })
+  await pane.unmount()
+}
+
+test('a closed pane leaves a band above the prompt that brings it back', async ($, on) => {
+  surfaceStubs(on)
+  on('ui.close', async () => ({ value: undefined }))
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>prompt</Text>
+  })
+  await $.tool.call(REPORT)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...BAND, surface } as never)
+    expect(await ui.find({ key: 'band-show' })).toBeUndefined()
+
+    await hidePane($)
+    expect(await ui.find({ key: 'band-show' })).toBeDefined()
+
+    await ui.press({ key: 'band-show' })
+    expect(await ui.find({ key: 'band-show' })).toBeUndefined()
+    await ui.unmount()
+  }
+})
+
+test('Dismiss hides the band until the next report', async ($, on) => {
+  surfaceStubs(on)
+  on('ui.close', async () => ({ value: undefined }))
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>prompt</Text>
+  })
+  await $.tool.call(REPORT)
+  await hidePane($)
+
+  const ui = await $.ui.mount({ ...BAND, surface: 'terminal' } as never)
+  await ui.press({ key: 'band-dismiss' })
+  expect(await ui.find({ key: 'band-show' })).toBeUndefined()
+
+  await $.tool.call(REPORT)
+  await hidePane($)
+  expect(await ui.find({ key: 'band-show' })).toBeDefined()
+  await ui.unmount()
 })
